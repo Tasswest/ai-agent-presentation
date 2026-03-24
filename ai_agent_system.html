@@ -1,0 +1,1487 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>De l'Outil IA au Système d'Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0
+    }
+
+    body {
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, sans-serif;
+      user-select: none;
+      -webkit-font-smoothing: antialiased
+    }
+
+    #wrap {
+      position: relative;
+      width: min(96vw, 171vh);
+      aspect-ratio: 16/9
+    }
+
+    #stage {
+      width: 100%;
+      height: 100%;
+      background: #fafafa;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 40px 90px rgba(0, 0, 0, .55)
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .6s ease, transform .6s cubic-bezier(.4, 0, .2, 1);
+      transform-origin: center center
+    }
+
+    .scene.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1)
+    }
+
+    .zoom-out {
+      transform: scale(3) !important;
+      opacity: 0 !important
+    }
+
+    .zoom-in-start {
+      transform: scale(.6) !important;
+      opacity: 0 !important
+    }
+
+    .smeta {
+      position: absolute;
+      top: 5.5%;
+      left: 5.5%;
+      display: flex;
+      align-items: center;
+      gap: 10px
+    }
+
+    .sstep {
+      font-size: clamp(8px, .75vw, 11px);
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #94a3b8
+    }
+
+    .sdiv {
+      width: 20px;
+      height: 1px;
+      background: #e2e8f0
+    }
+
+    .slbl {
+      font-size: clamp(8px, .75vw, 11px);
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #64748b
+    }
+
+    .scap {
+      position: absolute;
+      bottom: 5%;
+      left: 0;
+      right: 0;
+      text-align: center
+    }
+
+    .scap-main {
+      font-size: clamp(10px, 1.05vw, 14px);
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -.015em
+    }
+
+    .scap-sub {
+      font-size: clamp(9px, .85vw, 12px);
+      font-weight: 400;
+      color: #94a3b8;
+      margin-top: 3px
+    }
+
+    .dsvg {
+      position: absolute;
+      top: 16%;
+      left: 4%;
+      right: 4%;
+      bottom: 18%
+    }
+
+    /* S1 */
+    #s1 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px
+    }
+
+    #s1-ey {
+      font-size: clamp(8px, .8vw, 11px);
+      font-weight: 600;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: #94a3b8;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .6s, transform .6s
+    }
+
+    #s1-t {
+      font-size: clamp(20px, 3.5vw, 48px);
+      font-weight: 800;
+      letter-spacing: -.04em;
+      color: #0d1117;
+      text-align: center;
+      line-height: 1.1;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: opacity .7s, transform .7s;
+      max-width: 78%
+    }
+
+    #s1-hr {
+      width: 36px;
+      height: 2px;
+      background: #e2e8f0;
+      opacity: 0;
+      transition: opacity .5s
+    }
+
+    #s1-sub {
+      font-size: clamp(10px, 1.15vw, 16px);
+      font-weight: 400;
+      color: #64748b;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .6s, transform .6s
+    }
+
+    /* S10 */
+    #s10 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px
+    }
+
+    .cl {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .55s, transform .55s;
+      text-align: center
+    }
+
+    .cl-sm {
+      font-size: clamp(9px, .9vw, 13px);
+      color: #64748b;
+      font-weight: 400
+    }
+
+    .cl-lg {
+      font-size: clamp(16px, 2.6vw, 36px);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: #0d1117
+    }
+
+    .cl-pill {
+      font-size: clamp(9px, 1vw, 14px);
+      font-weight: 600;
+      color: #0f172a;
+      padding: 7px 20px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      display: inline-block;
+      background: white;
+      letter-spacing: -.01em
+    }
+
+    /* Controls */
+    #ctrls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px
+    }
+
+    #ctrls button {
+      background: #141414;
+      color: #d1d5db;
+      border: 1px solid #262626;
+      border-radius: 7px;
+      padding: 6px 14px;
+      font-size: 11px;
+      font-family: 'Inter', sans-serif;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: .02em;
+      transition: background .15s
+    }
+
+    #ctrls button:hover {
+      background: #1e1e1e;
+      border-color: #333
+    }
+
+    /* Top Nav & Branding */
+    #slide-nav {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 200;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      padding: 6px 8px;
+      border-radius: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border: 1px solid #e2e8f0;
+      pointer-events: auto
+    }
+
+    .nav-item {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #0f172a;
+      cursor: pointer;
+      padding: 6px 10px;
+      border-radius: 12px;
+      transition: all .2s;
+      user-select: none;
+      min-width: 28px;
+      text-align: center
+    }
+
+    .nav-item.active {
+      background: #0f172a;
+      color: white
+    }
+
+    .nav-item:hover:not(.active) {
+      background: #e2e8f0
+    }
+
+    .brand-logo {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      height: 26px;
+      z-index: 200;
+      pointer-events: none
+    }
+
+    .brand-credit {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: #94a3b8;
+      z-index: 200;
+      letter-spacing: 0.02em;
+      pointer-events: none
+    }
+
+    .pref-grid {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px
+    }
+
+    .pref-btn {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      transition: all .15s ease
+    }
+
+    .pref-btn:hover {
+      background: #f8fafc;
+      border-color: #94a3b8
+    }
+
+    .pref-btn.active {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+      box-shadow: 0 0 0 1px #3b82f6
+    }
+
+    .tgt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #334155;
+      cursor: pointer;
+      user-select: none
+    }
+
+    .tg-bx {
+      width: 32px;
+      height: 18px;
+      background: #e2e8f0;
+      border-radius: 9px;
+      position: relative;
+      transition: all .2s ease
+    }
+
+    .tg-bx::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border-radius: 50%;
+      transition: all .2s ease;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, .15)
+    }
+
+    input[type=checkbox]:checked+.tgt .tg-bx {
+      background: #2563eb
+    }
+
+    input[type=checkbox]:checked+.tgt .tg-bx::after {
+      transform: translateX(14px)
+    }
+
+    .step-hd {
+      font-size: 10px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 10px;
+      text-align: center
+    }
+  </style>
+</head>
+
+<body>
+  <!-- OpenAI logo SVG symbol (reused across all scenes) -->
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <symbol id="openai" viewBox="0 0 24 24">
+      <path fill="#2563eb"
+        d="M22.282 9.821a5.985 5.985 0 00-.516-4.91 6.046 6.046 0 00-6.51-2.9A6.065 6.065 0 004.981 4.18a5.985 5.985 0 00-3.998 2.9 6.046 6.046 0 00.743 7.097 5.98 5.98 0 00.511 4.911 6.051 6.051 0 006.515 2.9A5.985 5.985 0 0013.26 24a6.056 6.056 0 005.772-4.206 5.99 5.99 0 003.997-2.9 6.056 6.056 0 00-.747-7.073zm-9.022 12.608a4.475 4.475 0 01-2.876-1.04l.141-.081 4.779-2.758a.776.776 0 00.392-.681V11.86l2.021 1.168a.071.071 0 01.038.052v5.583a4.504 4.504 0 01-4.495 4.495zM2.919 17.7a4.471 4.471 0 01-.535-3.014l.142.085 4.783 2.759a.776.776 0 00.781 0l5.843-3.369v2.332a.08.08 0 01-.033.062L9.74 19.95A4.499 4.499 0 012.92 17.7zm-.584-10.25a4.485 4.485 0 012.366-1.973V11.6a.771.771 0 00.388.677l5.814 3.354-2.02 1.168a.076.076 0 01-.071 0L4.749 14.46A4.494 4.494 0 012.336 7.45zm16.597 3.856l-5.843-3.369 2.021-1.168a.076.076 0 01.071 0l4.178 2.413a4.494 4.494 0 01-.677 8.104V11.6a.79.79 0 00-.407-.667zm2.011-3.023l-.142-.085-4.774-2.782a.776.776 0 00-.785 0L9.4 8.846V6.514a.067.067 0 01.028-.061L14.26 3.66a4.499 4.499 0 016.68 4.66zm-12.64 4.151l-2.021-1.164a.08.08 0 01-.038-.057V6.059a4.499 4.499 0 017.376-3.454l-.142.081-4.778 2.758a.776.776 0 00-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5Z" />
+    </symbol>
+  </svg>
+  <div id="wrap">
+    <div id="stage">
+
+      <!-- S1 TITLE -->
+      <div class="scene" id="s1">
+        <div id="s1-ey">Vue d'Ensemble</div>
+        <div id="s1-t">De l'Outil IA au Système d'Agents</div>
+        <div id="s1-hr"></div>
+        <div id="s1-sub">Comment fonctionnent réellement les systèmes d'IA modernes</div>
+        <div id="s1-int"
+          style="opacity:0; transform:translateY(8px); transition:opacity .6s,transform .6s; display:flex; flex-direction:column; align-items:center; gap:20px; margin-top:24px;">
+          <div>
+            <div class="step-hd">1. Sélectionnez le contexte</div>
+            <div class="pref-grid" style="margin-top:0">
+              <button class="pref-btn active" data-pref="culture">Culture & Musées</button>
+              <button class="pref-btn" data-pref="party">Vie Nocturne & Fête</button>
+              <button class="pref-btn" data-pref="mix">Le Meilleur des Deux</button>
+            </div>
+          </div>
+
+          <div>
+            <div class="step-hd">2. Équipez l'Agent</div>
+            <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap">
+              <label><input type="checkbox" id="chk-wx" checked style="display:none">
+                <div class="tgt">
+                  <div class="tg-bx"></div>Weather API
+                </div>
+              </label>
+              <label><input type="checkbox" id="chk-dn" checked style="display:none">
+                <div class="tgt">
+                  <div class="tg-bx"></div>Dining API
+                </div>
+              </label>
+              <label><input type="checkbox" id="chk-ev" style="display:none">
+                <div class="tgt">
+                  <div class="tg-bx"></div>Events API
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <button id="btn-start"
+            style="margin-top:8px; background:#0f172a; color:white; border:none; padding:10px 24px; border-radius:6px; font-family:'Inter'; font-weight:600; cursor:pointer; letter-spacing:0.02em; transition:background .2s">Lancer
+            la Simulation</button>
+        </div>
+      </div>
+
+      <!-- S2 BASIC AI -->
+      <div class="scene" id="s2">
+        <div class="smeta"><span class="sstep">01</span>
+          <div class="sdiv"></div><span class="slbl">IA de Base</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh">
+              <feDropShadow dx="0" dy="1" stdDeviation="4" flood-color="#00000009" />
+            </filter>
+            <marker id="mh" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
+              <polygon points="0 0,9 3.5,0 7" fill="#94a3b8" />
+            </marker>
+          </defs>
+          <!-- User -->
+          <g id="s2-u" style="opacity:0;transform:translateY(6px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="44" y="150" width="224" height="108" rx="10" fill="white" stroke="#e2e8f0" stroke-width="1.5"
+              filter="url(#sh)" />
+            <rect x="44" y="150" width="4" height="108" rx="2" fill="#64748b" />
+            <text x="64" y="196" font-family="Inter" font-size="18" font-weight="700" fill="#0f172a">Utilisateur</text>
+            <text x="64" y="220" font-family="Inter" font-size="13" fill="#64748b">Envoie une requête</text>
+          </g>
+          <!-- arrow 1 -->
+          <line id="s2-a1" x1="258" y1="204" x2="314" y2="204" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"
+            stroke-dasharray="62" stroke-dashoffset="62" marker-end="url(#mh)" />
+          <!-- LLM -->
+          <g id="s2-l" style="opacity:0;transform:translateY(6px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="318" y="116" width="224" height="138" rx="10" fill="white" stroke="#bfdbfe" stroke-width="2"
+              filter="url(#sh)" />
+            <rect x="318" y="116" width="4" height="138" rx="2" fill="#2563eb" />
+            <text x="340" y="154" font-family="Inter" font-size="18" font-weight="700" fill="#0f172a">Modèle de
+              Langage</text>
+            <text x="340" y="177" font-family="Inter" font-size="13" fill="#2563eb">Traite la requête</text>
+            <text x="340" y="198" font-family="Inter" font-size="12" fill="#94a3b8">Génère uniquement du texte</text>
+            <text x="340" y="222" font-family="Inter" font-size="9.5" fill="#64748b" font-style="italic">Reasoning: Je
+              n'ai pas internet,</text>
+            <text x="340" y="238" font-family="Inter" font-size="9.5" fill="#64748b" font-style="italic">je génère des
+              infos génériques.</text>
+            <use href="#openai" x="516" y="122" width="18" height="18" />
+          </g>
+          <!-- arrow 2 -->
+          <line id="s2-a2" x1="544" y1="204" x2="600" y2="204" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"
+            stroke-dasharray="62" stroke-dashoffset="62" marker-end="url(#mh)" />
+          <!-- Response -->
+          <g id="s2-r" style="opacity:0;transform:translateY(6px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="604" y="150" width="212" height="108" rx="10" fill="white" stroke="#bbf7d0" stroke-width="2"
+              filter="url(#sh)" />
+            <rect x="604" y="150" width="4" height="108" rx="2" fill="#059669" />
+            <text x="624" y="196" font-family="Inter" font-size="18" font-weight="700" fill="#0f172a">Réponse</text>
+            <text x="624" y="220" font-family="Inter" font-size="13" fill="#059669">Renvoie du texte brut</text>
+          </g>
+          <!-- Request label -->
+          <g id="s2-ql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="44" y="280" width="224" height="60" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
+            <text x="60" y="308" font-family="Inter" font-size="12" fill="#475569">
+              <tspan font-weight="700">Input :</tspan> "Organise un voyage
+            </text>
+            <text x="60" y="324" font-family="Inter" font-size="12" fill="#475569">de 3 jours à Paris"</text>
+          </g>
+          <!-- Output label -->
+          <g id="s2-ol" style="opacity:0;transition:opacity .38s ease">
+            <rect x="604" y="280" width="212" height="72" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1" />
+            <text x="620" y="301" font-family="Inter" font-size="10" font-weight="500" fill="#059669">Paris est une
+              super destination !</text>
+            <text x="620" y="318" font-family="Inter" font-size="9.5" fill="#475569">Jour 1 : Tour Eiffel,
+              croisière...</text>
+            <text x="620" y="335" font-family="Inter" font-size="9.5" fill="#94a3b8">Jour 2 : Louvre, Le
+              Marais...</text>
+          </g>
+
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s2-cm" style="opacity:0;transition:opacity .4s">Ne génère que du texte — aucun
+            accès externe</div>
+          <div class="scap-sub">Le modèle n'est pas connecté à des infos en direct ou systèmes externes</div>
+        </div>
+      </div>
+
+      <!-- S3 ADD TOOL -->
+      <div class="scene" id="s3">
+        <div class="smeta"><span class="sstep">02</span>
+          <div class="sdiv"></div><span class="slbl">IA + Outil</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 960 390" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="sh3">
+              <feDropShadow dx="0" dy="1" stdDeviation="3" flood-color="#00000008" />
+            </filter>
+            <marker id="mh3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#94a3b8" />
+            </marker>
+          </defs>
+          <!-- User -->
+          <g id="s3-u" style="opacity:0;transform:translateY(5px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="76" y="140" width="128" height="72" rx="8" fill="white" stroke="#e2e8f0" stroke-width="1.5"
+              filter="url(#sh3)" />
+            <rect x="76" y="140" width="3" height="72" rx="1.5" fill="#64748b" />
+            <text x="91" y="172" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Utilisateur</text>
+            <text x="91" y="192" font-family="Inter" font-size="10" fill="#64748b">Envoie une requête</text>
+          </g>
+          <!-- User sub-box -->
+          <g id="s3-ql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="76" y="228" width="128" height="48" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+            <text x="86" y="249" font-family="Inter" font-size="8.5" fill="#475569">
+              <tspan font-weight="700">Input:</tspan> "Organise un
+            </text>
+            <text x="86" y="264" font-family="Inter" font-size="8.5" fill="#475569">séjour de 3j à Paris"</text>
+          </g>
+          <!-- Arrow 1 -->
+          <line id="s3-a1" x1="194" y1="176" x2="230" y2="176" stroke="#cbd5e1" stroke-width="1.5"
+            stroke-linecap="round" stroke-dasharray="38" stroke-dashoffset="38" marker-end="url(#mh3)" />
+          <!-- LLM 1 -->
+          <g id="s3-l1" style="opacity:0;transform:translateY(5px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="234" y="136" width="154" height="96" rx="8" fill="white" stroke="#bfdbfe" stroke-width="1.5"
+              filter="url(#sh3)" />
+            <rect x="234" y="136" width="3" height="96" rx="1.5" fill="#2563eb" />
+            <text x="249" y="160" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Modèle de
+              Langage</text>
+            <text x="249" y="176" font-family="Inter" font-size="9" fill="#2563eb">Décide : utilise l'outil</text>
+            <text x="249" y="196" font-family="Inter" font-size="8" fill="#64748b" font-style="italic">Reasoning : J'ai
+              besoin</text>
+            <text x="249" y="208" font-family="Inter" font-size="8" fill="#64748b" font-style="italic">de données
+              réelles,</text>
+            <text x="249" y="220" font-family="Inter" font-size="8" fill="#64748b" font-style="italic">j'appelle la
+              Travel API.</text>
+            <use href="#openai" x="370" y="142" width="14" height="14" />
+          </g>
+          <!-- Arrow 2 -->
+          <line id="s3-a2" x1="392" y1="176" x2="400" y2="176" stroke="#cbd5e1" stroke-width="1.5"
+            stroke-linecap="round" stroke-dasharray="38" stroke-dashoffset="38" marker-end="url(#mh3)" />
+          <!-- Tool -->
+          <g id="s3-t" style="opacity:0;transform:translateY(5px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="404" y="136" width="128" height="80" rx="8" fill="white" stroke="#fde68a" stroke-width="2"
+              filter="url(#sh3)" />
+            <rect x="404" y="136" width="3" height="80" rx="1.5" fill="#d97706" />
+            <text x="419" y="170" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Travel API</text>
+            <text x="419" y="188" font-family="Inter" font-size="9.5" fill="#d97706">Renvoie des données live</text>
+          </g>
+          <!-- Tool sub-box -->
+          <g id="s3-tql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="404" y="232" width="128" height="48" rx="6" fill="#fffbeb" stroke="#fde68a" />
+            <text x="414" y="253" font-family="Inter" font-size="8.5" fill="#d97706">Vols : 3 trouvés</text>
+            <text x="414" y="268" font-family="Inter" font-size="8.5" fill="#d97706">Hôtels : 12 options</text>
+          </g>
+          <!-- annotations -->
+          <g id="s3-an" style="opacity:0;transition:opacity .38s ease">
+            <text x="468" y="127" font-family="Inter" font-size="8.5" fill="#d97706" text-anchor="middle"
+              font-style="italic">appel outil</text>
+            <text x="468" y="300" font-family="Inter" font-size="8.5" fill="#059669" text-anchor="middle"
+              font-style="italic">données retournées</text>
+          </g>
+          <!-- Arrow 3 -->
+          <line id="s3-a3" x1="534" y1="176" x2="570" y2="176" stroke="#cbd5e1" stroke-width="1.5"
+            stroke-linecap="round" stroke-dasharray="38" stroke-dashoffset="38" marker-end="url(#mh3)" />
+          <!-- LLM 2 -->
+          <g id="s3-l2" style="opacity:0;transform:translateY(5px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="574" y="136" width="154" height="80" rx="8" fill="white" stroke="#bfdbfe" stroke-width="1.5"
+              filter="url(#sh3)" />
+            <rect x="574" y="136" width="3" height="80" rx="1.5" fill="#2563eb" />
+            <text x="589" y="170" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a">Modèle de
+              Langage</text>
+            <text x="589" y="188" font-family="Inter" font-size="9.5" fill="#2563eb">Formate la réponse</text>
+            <use href="#openai" x="710" y="142" width="14" height="14" />
+          </g>
+          <!-- Arrow 4 -->
+          <line id="s3-a4" x1="732" y1="176" x2="740" y2="176" stroke="#cbd5e1" stroke-width="1.5"
+            stroke-linecap="round" stroke-dasharray="38" stroke-dashoffset="38" marker-end="url(#mh3)" />
+          <!-- Response -->
+          <g id="s3-r" style="opacity:0;transform:translateY(5px);transition:opacity .38s ease,transform .38s ease">
+            <rect x="744" y="140" width="116" height="72" rx="8" fill="white" stroke="#bbf7d0" stroke-width="2"
+              filter="url(#sh3)" />
+            <rect x="744" y="140" width="3" height="72" rx="1.5" fill="#059669" />
+            <text x="759" y="172" font-family="Inter" font-size="14" font-weight="700" fill="#0f172a">Réponse</text>
+            <text x="759" y="192" font-family="Inter" font-size="10" fill="#059669">Données en direct</text>
+          </g>
+          <!-- Response sub-box -->
+          <g id="s3-rql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="744" y="228" width="116" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" />
+            <text x="754" y="249" font-family="Inter" font-size="8.5" fill="#059669">CDG, 15 Avr, AF1234</text>
+            <text x="754" y="264" font-family="Inter" font-size="8.5" fill="#475569">Hôtel : boutique...</text>
+          </g>
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s3-cm" style="opacity:0;transition:opacity .4s">Peut récupérer des données réelles
+            via des outils externes</div>
+          <div class="scap-sub">Le modèle appelle une API et intègre les infos dans sa réponse</div>
+        </div>
+      </div>
+
+      <!-- S4 MULTIPLE TOOLS -->
+      <div class="scene" id="s4">
+        <div class="smeta"><span class="sstep">03</span>
+          <div class="sdiv"></div><span class="slbl">Sélection d'Outils</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="mh4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#94a3b8" />
+            </marker>
+            <marker id="mh4s" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#d97706" />
+            </marker>
+          </defs>
+          <!-- LLM -->
+          <g id="s4-l" style="opacity:0;transition:opacity .4s">
+            <rect x="80" y="150" width="164" height="76" rx="6" fill="white" stroke="#bfdbfe" stroke-width="1.5" />
+            <rect x="80" y="150" width="3" height="76" rx="1.5" fill="#2563eb" />
+            <text x="96" y="182" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Modèle de
+              Langage</text>
+            <text x="96" y="200" font-family="Inter" font-size="9.5" fill="#2563eb">Analyse la tâche,</text>
+            <text x="96" y="215" font-family="Inter" font-size="9.5" fill="#2563eb">sélectionne l'outil</text>
+          </g>
+          <!-- branch paths (gray) -->
+          <path id="s4-p1" d="M248,188 C290,188 290,100 340,100" stroke="#e2e8f0" stroke-width="1.5" fill="none"
+            stroke-dasharray="230" stroke-dashoffset="230" style="transition:stroke-dashoffset .5s" />
+          <path id="s4-p2" d="M248,188 L340,188" stroke="#e2e8f0" stroke-width="1.5" fill="none" stroke-dasharray="95"
+            stroke-dashoffset="95" style="transition:stroke-dashoffset .4s" />
+          <path id="s4-p3" d="M248,188 C290,188 290,280 340,280" stroke="#e2e8f0" stroke-width="1.5" fill="none"
+            stroke-dasharray="230" stroke-dashoffset="230" style="transition:stroke-dashoffset .5s" />
+          <!-- selected paths (amber) explicitly instantiated for parallel operations -->
+          <path id="s4-ps1" d="M248,188 C290,188 290,98 340,98" stroke="#d97706" stroke-width="2" fill="none"
+            stroke-dasharray="320" stroke-dashoffset="320"
+            style="opacity:0;transition:stroke-dashoffset .4s,opacity .3s;display:none;" />
+          <path id="s4-ps2" d="M248,188 L340,188" stroke="#d97706" stroke-width="2" fill="none" stroke-dasharray="320"
+            stroke-dashoffset="320" style="opacity:0;transition:stroke-dashoffset .4s,opacity .3s;display:none;" />
+          <path id="s4-ps3" d="M248,188 C290,188 290,278 340,278" stroke="#d97706" stroke-width="2" fill="none"
+            stroke-dasharray="320" stroke-dashoffset="320"
+            style="opacity:0;transition:stroke-dashoffset .4s,opacity .3s;display:none;" />
+          <!-- Weather API (Tool 1) -->
+          <g id="s4-t1" style="opacity:0;transition:opacity .4s">
+            <rect x="340" y="68" width="148" height="60" rx="6" fill="white" stroke="#e2e8f0" />
+            <rect x="340" y="68" width="3" height="60" rx="1.5" fill="#94a3b8" />
+            <text id="s4-t1-txt" x="356" y="96" font-family="Inter" font-size="11.5" font-weight="600"
+              fill="#64748b">Weather API</text>
+            <text id="s4-t1-sub" x="356" y="113" font-family="Inter" font-size="9.5" fill="#94a3b8">Prévisions</text>
+          </g>
+          <!-- Dining API (Tool 2 - typically selected) -->
+          <g id="s4-t2" style="opacity:0;transition:opacity .4s">
+            <rect x="340" y="158" width="148" height="60" rx="6" fill="white" stroke="#fde68a" stroke-width="2" />
+            <rect x="340" y="158" width="3" height="60" rx="1.5" fill="#d97706" />
+            <text id="s4-t2-txt" x="356" y="186" font-family="Inter" font-size="11.5" font-weight="600"
+              fill="#0f172a">Dining API</text>
+            <text id="s4-t2-sub" x="356" y="203" font-family="Inter" font-size="9.5" fill="#d97706">Réservations</text>
+          </g>
+          <!-- Events API (Tool 3) -->
+          <g id="s4-t3" style="opacity:0;transition:opacity .4s">
+            <rect x="340" y="248" width="148" height="60" rx="6" fill="white" stroke="#e2e8f0" />
+            <rect x="340" y="248" width="3" height="60" rx="1.5" fill="#94a3b8" />
+            <text id="s4-t3-txt" x="356" y="276" font-family="Inter" font-size="11.5" font-weight="600"
+              fill="#64748b">Events API</text>
+            <text id="s4-t3-sub" x="356" y="293" font-family="Inter" font-size="9.5" fill="#94a3b8">Activités
+              locales</text>
+          </g>
+          <!-- merge arrows + response -->
+          <path id="s4-mr1" d="M488,98 C515,98 515,188 534,188 L544,188" fill="none" stroke="#d97706" stroke-width="1.5"
+            stroke-dasharray="240" stroke-dashoffset="240" marker-end="url(#mh4s)"
+            style="opacity:0;transition:stroke-dashoffset .4s,opacity .3s;display:none;" />
+          <path id="s4-mr2" d="M488,188 L544,188" fill="none" stroke="#d97706" stroke-width="1.5" stroke-dasharray="240"
+            stroke-dashoffset="240" marker-end="url(#mh4s)"
+            style="opacity:0;transition:stroke-dashoffset .4s,opacity .3s;display:none;" />
+          <path id="s4-mr3" d="M488,278 C515,278 515,188 534,188 L544,188" fill="none" stroke="#d97706"
+            stroke-width="1.5" stroke-dasharray="240" stroke-dashoffset="240" marker-end="url(#mh4s)"
+            style="opacity:0;transition:stroke-dashoffset .4s,opacity .3s;display:none;" />
+          <g id="s4-resp" style="opacity:0;transition:opacity .4s">
+            <rect x="548" y="158" width="148" height="60" rx="6" fill="white" stroke="#bbf7d0" stroke-width="1.5" />
+            <rect x="548" y="158" width="3" height="60" rx="1.5" fill="#059669" />
+            <text x="564" y="186" font-family="Inter" font-size="11.5" font-weight="600" fill="#0f172a">Réponse</text>
+            <text x="564" y="203" font-family="Inter" font-size="9.5" fill="#059669">Données hôtel réelles</text>
+          </g>
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s4-cm" style="opacity:0;transition:opacity .4s">Choisit le bon outil pour la bonne
+            tâche</div>
+          <div class="scap-sub">Le modèle pioche dynamiquement dans ses outils — ils ne sont pas tous utilisés</div>
+        </div>
+      </div>
+
+      <!-- S5 MEMORY -->
+      <div class="scene" id="s5">
+        <div class="smeta"><span class="sstep">04</span>
+          <div class="sdiv"></div><span class="slbl">Memory</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="mh5" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#94a3b8" />
+            </marker>
+            <marker id="mh5p" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#7c3aed" />
+            </marker>
+          </defs>
+          <!-- pipeline (already familiar - compressed) -->
+          <g id="s5-pipe" style="opacity:0;transition:opacity .5s">
+            <rect x="30" y="176" width="108" height="52" rx="6" fill="white" stroke="#e2e8f0" stroke-width="1.5" />
+            <rect x="30" y="176" width="3" height="52" rx="1.5" fill="#64748b" />
+            <text x="44" y="201" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Utilisateur</text>
+            <text x="44" y="216" font-family="Inter" font-size="9" fill="#64748b">Requête</text>
+          </g>
+          <line id="s5-a1" x1="140" y1="202" x2="178" y2="202" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="45"
+            stroke-dashoffset="45" marker-end="url(#mh5)" style="transition:stroke-dashoffset .4s" />
+          <g id="s5-l1" style="opacity:0;transition:opacity .4s">
+            <rect x="182" y="170" width="138" height="64" rx="6" fill="white" stroke="#bfdbfe" stroke-width="1.5" />
+            <rect x="182" y="170" width="3" height="64" rx="1.5" fill="#2563eb" />
+            <text x="196" y="198" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Modèle de
+              Langage</text>
+            <text x="196" y="213" font-family="Inter" font-size="9.5" fill="#2563eb">+ contexte mémorisé</text>
+          </g>
+          <line id="s5-a2" x1="322" y1="202" x2="360" y2="202" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="45"
+            stroke-dashoffset="45" marker-end="url(#mh5)" style="transition:stroke-dashoffset .4s" />
+          <g id="s5-t" style="opacity:0;transition:opacity .4s">
+            <rect x="364" y="172" width="132" height="60" rx="6" fill="white" stroke="#fde68a" stroke-width="1.5" />
+            <rect x="364" y="172" width="3" height="60" rx="1.5" fill="#d97706" />
+            <text x="378" y="199" font-family="Inter" font-size="11.5" font-weight="600" fill="#0f172a">Hotels
+              API</text>
+            <text x="378" y="215" font-family="Inter" font-size="9.5" fill="#d97706">Résultats filtrés</text>
+          </g>
+          <line id="s5-a3" x1="498" y1="202" x2="536" y2="202" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="45"
+            stroke-dashoffset="45" marker-end="url(#mh5)" style="transition:stroke-dashoffset .4s" />
+          <g id="s5-r" style="opacity:0;transition:opacity .4s">
+            <rect x="540" y="176" width="120" height="52" rx="6" fill="white" stroke="#bbf7d0" stroke-width="1.5" />
+            <rect x="540" y="176" width="3" height="52" rx="1.5" fill="#059669" />
+            <text x="554" y="201" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Réponse</text>
+            <text x="554" y="216" font-family="Inter" font-size="9.5" fill="#059669">Personnalisé</text>
+          </g>
+          <!-- Memory block (appears from above) -->
+          <g id="s5-mem" style="opacity:0;transition:opacity .5s">
+            <rect x="182" y="60" width="202" height="78" rx="6" fill="white" stroke="#ddd6fe" stroke-width="2" />
+            <rect x="182" y="60" width="3" height="78" rx="1.5" fill="#7c3aed" />
+            <text x="197" y="89" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Mémoire</text>
+            <text x="197" y="107" font-family="Inter" font-size="9.5" fill="#7c3aed">"I prefer boutique hotels"</text>
+            <text x="197" y="122" font-family="Inter" font-size="9.5" fill="#94a3b8">Préférence utilisateur
+              stockée</text>
+          </g>
+          <!-- Connection memory -> LLM -->
+          <line id="s5-mc" x1="283" y1="140" x2="283" y2="168" stroke="#7c3aed" stroke-width="1.5" stroke-dasharray="30"
+            stroke-dashoffset="30" marker-end="url(#mh5p)" style="transition:stroke-dashoffset .4s" />
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s5-cm" style="opacity:0;transition:opacity .4s">Le système s'adapte au contexte
+            stocké</div>
+          <div class="scap-sub">Les préférences de l'utilisateur guident les décisions futures</div>
+        </div>
+      </div>
+
+      <!-- S6 AGENT LOOP -->
+      <div class="scene" id="s6">
+        <div class="smeta"><span class="sstep">05</span>
+          <div class="sdiv"></div><span class="slbl">Boucle d'Agent</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="mh6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#94a3b8" />
+            </marker>
+          </defs>
+          <!-- Loop nodes arranged in a diamond/square -->
+          <!-- Observer (top) -->
+          <g id="s6-obs" style="opacity:0;transition:opacity .4s">
+            <rect x="330" y="28" width="200" height="64" rx="6" fill="white" stroke="#bfdbfe" stroke-width="1.5" />
+            <rect x="330" y="28" width="3" height="64" rx="1.5" fill="#2563eb" />
+            <text x="346" y="56" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Observer</text>
+            <text x="346" y="73" font-family="Inter" font-size="9.5" fill="#64748b">Read inputs &amp; state</text>
+          </g>
+          <!-- Raisonner (right) -->
+          <g id="s6-rsn" style="opacity:0;transition:opacity .4s">
+            <rect x="620" y="146" width="200" height="80" rx="6" fill="white" stroke="#bfdbfe" stroke-width="1.5" />
+            <rect x="620" y="146" width="3" height="80" rx="1.5" fill="#2563eb" />
+            <text x="636" y="174" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Raisonner</text>
+            <text id="s6-rsn-t1" x="636" y="196" font-family="Inter" font-size="9.5" fill="#2563eb" font-style="italic"
+              style="transition:opacity .2s">Analyze &amp; plan</text>
+            <text id="s6-rsn-t2" x="636" y="214" font-family="Inter" font-size="9.5" fill="#2563eb" font-style="italic"
+              style="transition:opacity .2s"></text>
+          </g>
+          <!-- Act (bottom) -->
+          <g id="s6-act" style="opacity:0;transition:opacity .4s">
+            <rect x="330" y="280" width="200" height="64" rx="6" fill="white" stroke="#fde68a" stroke-width="1.5" />
+            <rect x="330" y="280" width="3" height="64" rx="1.5" fill="#d97706" />
+            <text x="346" y="308" font-family="Inter" font-size="12" font-weight="600" fill="#0f172a">Agir</text>
+            <text x="346" y="325" font-family="Inter" font-size="9.5" fill="#d97706">Utilise l'API, agit</text>
+          </g>
+          <!-- Loop arrows (clockwise: Observer->Raisonner->Act->Observer) -->
+          <path id="s6-ar1" d="M 532,60 Q 620,60 620,146" stroke="#94a3b8" stroke-width="1.5" fill="none"
+            stroke-dasharray="180" stroke-dashoffset="180" marker-end="url(#mh6)"
+            style="transition:stroke-dashoffset .5s" />
+          <path id="s6-ar2" d="M 620,226 Q 620,312 532,312" stroke="#94a3b8" stroke-width="1.5" fill="none"
+            stroke-dasharray="180" stroke-dashoffset="180" marker-end="url(#mh6)"
+            style="transition:stroke-dashoffset .5s" />
+          <path id="s6-ar3" d="M 330,312 Q 240,312 240,186 Q 240,60 330,60" stroke="#94a3b8" stroke-width="1.5"
+            fill="none" stroke-dasharray="360" stroke-dashoffset="360" marker-end="url(#mh6)"
+            style="transition:stroke-dashoffset .6s" />
+          <!-- Iteration indicators -->
+          <g id="s6-it1" style="opacity:0;transition:opacity .4s">
+            <text x="140" y="165" font-family="Inter" font-size="9" fill="#64748b" text-anchor="middle">Itération
+              1</text>
+            <text x="140" y="180" font-family="Inter" font-size="9" fill="#94a3b8" text-anchor="middle">Recherche de
+              vols</text>
+          </g>
+          <g id="s6-it2" style="opacity:0;transition:opacity .4s">
+            <text x="140" y="205" font-family="Inter" font-size="9" fill="#64748b" text-anchor="middle">Itération
+              2</text>
+            <text x="140" y="220" font-family="Inter" font-size="9" fill="#94a3b8" text-anchor="middle">Affine les
+              options</text>
+          </g>
+          <g id="s6-it3" style="opacity:0;transition:opacity .4s">
+            <text x="140" y="245" font-family="Inter" font-size="9" fill="#64748b" text-anchor="middle">Itération
+              3</text>
+            <text x="140" y="260" font-family="Inter" font-size="9" fill="#94a3b8" text-anchor="middle">Finalise le
+              plan</text>
+          </g>
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s6-cm" style="opacity:0;transition:opacity .4s">Itère jusqu'à ce que l'objectif
+            soit atteint</div>
+          <div class="scap-sub">La boucle s'exécute plusieurs fois — chaque cycle affine le résultat</div>
+        </div>
+      </div>
+
+      <!-- S7 FRAMEWORK -->
+      <div class="scene" id="s7">
+        <div class="smeta"><span class="sstep">06</span>
+          <div class="sdiv"></div><span class="slbl">Système Structuré</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+          <!-- Outer framework box -->
+          <g id="s7-frame" style="opacity:0;transition:opacity .5s">
+            <rect x="40" y="20" width="780" height="300" rx="10" fill="none" stroke="#e2e8f0" stroke-width="2"
+              stroke-dasharray="8 4" />
+            <text x="60" y="46" font-family="Inter" font-size="11" font-weight="700" letter-spacing="0.1em"
+              fill="#94a3b8">ARCHITECTURE D'AGENT</text>
+          </g>
+          <!-- Orchestrateur -->
+          <g id="s7-orch" style="opacity:0;transition:opacity .4s">
+            <rect x="80" y="70" width="180" height="200" rx="8" fill="white" stroke="#e2e8f0" stroke-width="1.5" />
+            <rect x="80" y="70" width="180" height="4" rx="2" fill="#4f46e5" />
+            <text x="170" y="102" font-family="Inter" font-size="11" font-weight="700" fill="#0f172a"
+              text-anchor="middle">Orchestrateur</text>
+            <rect x="96" y="118" width="148" height="28" rx="5" fill="#f8fafc" />
+            <text x="170" y="137" font-family="Inter" font-size="9.5" fill="#64748b" text-anchor="middle">Contrôle le
+              flux</text>
+            <rect x="96" y="154" width="148" height="28" rx="5" fill="#f8fafc" />
+            <text x="170" y="173" font-family="Inter" font-size="9.5" fill="#64748b" text-anchor="middle">Gère les
+              itérations</text>
+            <rect x="96" y="190" width="148" height="28" rx="5" fill="#f8fafc" />
+            <text x="170" y="209" font-family="Inter" font-size="9.5" fill="#64748b" text-anchor="middle">Suit
+              l'avancement</text>
+          </g>
+          <!-- Registre d'Outils -->
+          <g id="s7-reg" style="opacity:0;transition:opacity .4s">
+            <rect x="300" y="70" width="200" height="200" rx="8" fill="white" stroke="#fde68a" stroke-width="1.5" />
+            <rect x="300" y="70" width="200" height="4" rx="2" fill="#d97706" />
+            <text x="400" y="102" font-family="Inter" font-size="11" font-weight="700" fill="#0f172a"
+              text-anchor="middle">Registre d'Outils</text>
+            <text x="316" y="132" font-family="Inter" font-size="9.5" fill="#d97706">Flights API</text>
+            <line x1="316" y1="145" x2="484" y2="145" stroke="#fde68a" stroke-width="1" />
+            <text x="316" y="165" font-family="Inter" font-size="9.5" fill="#d97706">Hotels API</text>
+            <line x1="316" y1="178" x2="484" y2="178" stroke="#fde68a" stroke-width="1" />
+            <text x="316" y="198" font-family="Inter" font-size="9.5" fill="#d97706">Maps API</text>
+            <line x1="316" y1="211" x2="484" y2="211" stroke="#fde68a" stroke-width="1" />
+            <text x="316" y="231" font-family="Inter" font-size="9.5" fill="#d97706">Calendar API</text>
+          </g>
+          <!-- Gestionnaire de Mémoire -->
+          <g id="s7-mem" style="opacity:0;transition:opacity .4s">
+            <rect x="540" y="70" width="240" height="200" rx="8" fill="white" stroke="#ddd6fe" stroke-width="1.5" />
+            <rect x="540" y="70" width="240" height="4" rx="2" fill="#7c3aed" />
+            <text x="660" y="102" font-family="Inter" font-size="11" font-weight="700" fill="#0f172a"
+              text-anchor="middle">Gestionnaire de Mémoire</text>
+            <rect x="556" y="118" width="100" height="56" rx="5" fill="#faf5ff" />
+            <text x="606" y="142" font-family="Inter" font-size="9.5" fill="#7c3aed" text-anchor="middle">Court
+              terme</text>
+            <text x="606" y="158" font-family="Inter" font-size="9" fill="#94a3b8" text-anchor="middle">Contexte de
+              session</text>
+            <rect x="666" y="118" width="100" height="56" rx="5" fill="#faf5ff" />
+            <text x="716" y="142" font-family="Inter" font-size="9.5" fill="#7c3aed" text-anchor="middle">Long
+              terme</text>
+            <text x="716" y="158" font-family="Inter" font-size="9" fill="#94a3b8" text-anchor="middle">Profil
+              utilisateur</text>
+          </g>
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s7-cm" style="opacity:0;transition:opacity .4s">Un framework organise la complexité
+            en composants clairs</div>
+          <div class="scap-sub">Chaque composant a un rôle défini — rendant le système maintenable</div>
+        </div>
+      </div>
+
+      <!-- S8 MULTI-AGENT -->
+      <div class="scene" id="s8">
+        <div class="smeta"><span class="sstep">07</span>
+          <div class="sdiv"></div><span class="slbl">Système Multi-Agents</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="mh8" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#94a3b8" />
+            </marker>
+            <marker id="mh8err" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+              <polygon points="0 0,8 3,0 6" fill="#ef4444" />
+            </marker>
+          </defs>
+          <!-- Planificateur -->
+          <g id="s8-p" style="opacity:0;transition:opacity .4s">
+            <rect x="60" y="100" width="188" height="168" rx="8" fill="white" stroke="#bfdbfe" stroke-width="1.5" />
+            <rect x="60" y="100" width="188" height="4" rx="2" fill="#2563eb" />
+            <text x="154" y="132" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a"
+              text-anchor="middle">Planificateur</text>
+            <text x="76" y="160" font-family="Inter" font-size="9.5" fill="#64748b">Décompose l'objectif</text>
+            <text x="76" y="177" font-family="Inter" font-size="9.5" fill="#64748b">en sous-tâches</text>
+            <text x="76" y="202" font-family="Inter" font-size="9" fill="#94a3b8">1. Recherche de vols</text>
+            <text x="76" y="217" font-family="Inter" font-size="9" fill="#94a3b8">2. Réserve l'hôtel</text>
+            <text x="76" y="232" font-family="Inter" font-size="9" fill="#94a3b8">3. Crée l'itinéraire</text>
+            <text id="s8-p-tht" x="154" y="254" font-family="Inter" font-size="9.5" fill="#2563eb" font-style="italic"
+              text-anchor="middle" style="opacity:0;transition:opacity .2s"></text>
+          </g>
+          <!-- arrows Planificateur <-> Exécuteur -->
+          <g id="s8-a1" style="opacity:0;transition:opacity .4s">
+            <line x1="250" y1="180" x2="334" y2="180" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#mh8)" />
+            <line x1="334" y1="192" x2="250" y2="192" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#mh8)" />
+          </g>
+          <!-- Exécuteur -->
+          <g id="s8-e" style="opacity:0;transition:opacity .4s">
+            <rect x="338" y="100" width="186" height="168" rx="8" fill="white" stroke="#fde68a" stroke-width="1.5" />
+            <rect x="338" y="100" width="186" height="4" rx="2" fill="#d97706" />
+            <text x="431" y="132" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a"
+              text-anchor="middle">Exécuteur</text>
+            <text x="354" y="160" font-family="Inter" font-size="9.5" fill="#64748b">Appelle les API</text>
+            <text x="354" y="177" font-family="Inter" font-size="9.5" fill="#64748b">et exécute la tâche</text>
+            <text x="354" y="202" font-family="Inter" font-size="9" fill="#d97706">Flights API</text>
+            <text x="354" y="217" font-family="Inter" font-size="9" fill="#d97706">Hotels API</text>
+            <text x="354" y="232" font-family="Inter" font-size="9" fill="#d97706">Maps API</text>
+            <text id="s8-e-tht" x="431" y="254" font-family="Inter" font-size="9.5" fill="#d97706" font-style="italic"
+              text-anchor="middle" style="opacity:0;transition:opacity .2s"></text>
+          </g>
+          <!-- Dynamic Error Components (Hidden by default) -->
+          <g id="s8-e-fail" style="opacity:0;transition:opacity .4s">
+            <rect x="344" y="236" width="174" height="24" rx="4" fill="#fef2f2" stroke="#fca5a5" />
+            <text id="s8-e-fail-txt" x="431" y="252" font-family="Inter" font-size="8.5" fill="#ef4444"
+              font-weight="600" text-anchor="middle">Accès Refusé</text>
+          </g>
+          <g id="s8-a-err" style="opacity:0;transition:opacity .4s">
+            <line x1="334" y1="248" x2="250" y2="248" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="6 3"
+              marker-end="url(#mh8err)" />
+            <text x="292" y="242" font-family="Inter" font-size="8" fill="#ef4444" text-anchor="middle"
+              font-weight="600">Erreur : Manque API</text>
+          </g>
+          <g id="s8-p-fb" style="opacity:0;transition:opacity .4s">
+            <rect x="68" y="236" width="172" height="24" rx="4" fill="#fffbeb" stroke="#fde68a" />
+            <text x="154" y="252" font-family="Inter" font-size="8.5" fill="#d97706" font-weight="600"
+              text-anchor="middle">Fallback : Demander à l'utilisateur</text>
+          </g>
+          <!-- arrows Exécuteur <-> Évaluateur -->
+          <g id="s8-a2" style="opacity:0;transition:opacity .4s">
+            <line x1="526" y1="180" x2="610" y2="180" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#mh8)" />
+            <line x1="610" y1="192" x2="526" y2="192" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#mh8)" />
+          </g>
+          <!-- Évaluateur -->
+          <g id="s8-r" style="opacity:0;transition:opacity .4s">
+            <rect x="614" y="100" width="188" height="168" rx="8" fill="white" stroke="#bbf7d0" stroke-width="1.5" />
+            <rect x="614" y="100" width="188" height="4" rx="2" fill="#059669" />
+            <text x="708" y="132" font-family="Inter" font-size="12" font-weight="700" fill="#0f172a"
+              text-anchor="middle">Évaluateur</text>
+            <text x="630" y="160" font-family="Inter" font-size="9.5" fill="#64748b">Valide la qualité</text>
+            <text x="630" y="177" font-family="Inter" font-size="9.5" fill="#64748b">et format du texte</text>
+            <text x="630" y="202" font-family="Inter" font-size="9" fill="#059669">Vérifie les faits</text>
+            <text x="630" y="217" font-family="Inter" font-size="9" fill="#059669">Remonte les erreurs</text>
+            <text x="630" y="232" font-family="Inter" font-size="9" fill="#059669">Approuve le plan</text>
+            <text id="s8-r-tht" x="708" y="254" font-family="Inter" font-size="9.5" fill="#059669" font-style="italic"
+              text-anchor="middle" style="opacity:0;transition:opacity .2s"></text>
+          </g>
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s8-cm" style="opacity:0;transition:opacity .4s">Des agents spécialisés collaborent
+            sur des tâches</div>
+          <div class="scap-sub">Chaque agent se concentre sur son rôle principal</div>
+        </div>
+      </div>
+
+      <!-- S9 FINAL OUTPUT -->
+      <div class="scene" id="s9">
+        <div class="smeta"><span class="sstep">08</span>
+          <div class="sdiv"></div><span class="slbl">Rendu Final</span>
+        </div>
+        <svg class="dsvg" viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+          <!-- Output card -->
+          <g id="s9-card" style="opacity:0;transition:opacity .5s">
+            <rect x="150" y="20" width="560" height="320" rx="10" fill="white" stroke="#e2e8f0" stroke-width="1.5" />
+            <rect x="150" y="20" width="560" height="4" rx="2" fill="#059669" />
+            <text x="178" y="50" font-family="Inter" font-size="13" font-weight="700" fill="#0f172a">Séjour Paris — 3
+              Jours</text>
+            <text x="674" y="50" font-family="Inter" font-size="9.5" fill="#059669" text-anchor="end">Généré par
+              l'Agent</text>
+          </g>
+          <!-- Flights row -->
+          <g id="s9-fl" style="opacity:0;transition:opacity .4s">
+            <rect x="168" y="64" width="524" height="56" rx="6" fill="#f0fdf4" stroke="#bbf7d0" />
+            <rect x="168" y="64" width="3" height="56" rx="1.5" fill="#059669" />
+            <text x="184" y="88" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Vol réservé</text>
+            <text x="184" y="106" font-family="Inter" font-size="9.5" fill="#64748b">CDG — Apr 15, 09:40 / Retour Apr
+              18, 16:20 / Air France AF1234</text>
+          </g>
+          <!-- Hotel row -->
+          <g id="s9-ht" style="opacity:0;transition:opacity .4s">
+            <rect x="168" y="130" width="524" height="56" rx="6" fill="#faf5ff" stroke="#ddd6fe" />
+            <rect x="168" y="130" width="3" height="56" rx="1.5" fill="#7c3aed" />
+            <text x="184" y="154" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Hôtel
+              réservé</text>
+            <text x="184" y="172" font-family="Inter" font-size="9.5" fill="#64748b">Hotel Saint-Louis, Ile Saint-Louis
+              / Boutique / 3 nights / Preferred</text>
+          </g>
+          <!-- Itinéraire rows -->
+          <g id="s9-it" style="opacity:0;transition:opacity .4s">
+            <rect x="168" y="196" width="524" height="128" rx="6" fill="#eff6ff" stroke="#bfdbfe" />
+            <rect x="168" y="196" width="3" height="128" rx="1.5" fill="#2563eb" />
+            <text x="184" y="220" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Itinéraire</text>
+            <text x="184" y="240" font-family="Inter" font-size="9.5" fill="#64748b">Day 1 — Eiffel Tower, Seine River
+              cruise, dinner in Saint-Germain</text>
+            <text x="184" y="258" font-family="Inter" font-size="9.5" fill="#64748b">Day 2 — Louvre Museum, Tuileries
+              Garden, Marais district</text>
+            <text x="184" y="276" font-family="Inter" font-size="9.5" fill="#64748b">Day 3 — Montmartre, Sacré-Coeur,
+              farewell lunch in Le Marais</text>
+          </g>
+        </svg>
+        <div class="scap">
+          <div class="scap-main" id="s9-cm" style="opacity:0;transition:opacity .4s">Un plan de voyage complet et
+            personnalisé — exécuté via les IA</div>
+          <div class="scap-sub">Vols, hébergement et programme quotidien — tout est formaté par l'agent !</div>
+        </div>
+      </div>
+
+      <!-- S10 CONCLUSION -->
+      <div class="scene" id="s10">
+        <div id="s10-inner"
+          style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:16px">
+          <div class="cl cl-sm" id="c0">L'IA a évolué :</div>
+          <div class="cl cl-lg" id="c1">Générer du texte</div>
+          <div class="cl cl-lg" id="c2">Exécuter des tâches complexes</div>
+          <div class="cl cl-pill" id="c3">Agents = Raisonnement + Outils + Mémoire + Itérations</div>
+        </div>
+      </div>
+
+    </div><!-- /stage -->
+    <nav id="slide-nav">
+      <div class="nav-item active" data-id="0">01</div>
+      <div class="nav-item" data-id="1">02</div>
+      <div class="nav-item" data-id="2">03</div>
+      <div class="nav-item" data-id="3">04</div>
+      <div class="nav-item" data-id="4">05</div>
+      <div class="nav-item" data-id="5">06</div>
+      <div class="nav-item" data-id="6">07</div>
+      <div class="nav-item" data-id="7">08</div>
+      <div class="nav-item" data-id="8">09</div>
+      <div class="nav-item" data-id="9">10</div>
+    </nav>
+    <img src="bunka-logo_new.png" class="brand-logo" alt="Bunka">
+    <div class="brand-credit" style="pointer-events:auto"><a
+        href="https://www.linkedin.com/in/tassilo-westphalen-08299a386" target="_blank"
+        style="color:inherit;text-decoration:none">Tassilo Westphalen</a></div>
+  </div><!-- /wrap -->
+  <div id="ctrls">
+    <button id="bprev">Précédent</button>
+    <button id="bnext">Suivant</button>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const wait = ms => new Promise(r => setTimeout(r, ms));
+    function fi(id, dur = 380) { return new Promise(r => { const e = $(id); if (!e) return r(); e.style.transition = `opacity ${dur}ms ease,transform ${dur}ms ease`; e.style.opacity = '1'; e.style.transform = 'none'; setTimeout(r, dur); }); }
+    function da(id, dur = 460) { return new Promise(r => { const e = $(id); if (!e) return r(); e.style.transition = `stroke-dashoffset ${dur}ms cubic-bezier(.4,0,.2,1)`; e.style.strokeDashoffset = '0'; setTimeout(r, dur); }); }
+    function sv(id, on = true, dur = 300) { return new Promise(r => { const e = $(id); if (!e) return r(); e.style.transition = `opacity ${dur}ms ease,stroke-dashoffset ${dur}ms ease`; e.style.opacity = on ? '1' : '0'; if (on) e.style.strokeDashoffset = '0'; setTimeout(r, dur); }); }
+
+    const PREFS = {
+      culture: {
+        mem: "Je préfère l'histoire et les musées",
+        hotel: "Pavillon de la Reine, Le Marais  /  Historique  /  3 nuits",
+        d1: "Jour 1 — Musée du Louvre, Jardin des Tuileries, croisière sur la Seine",
+        d2: "Jour 2 — Musée d'Orsay, Invalides, visite historique à pied",
+        d3: "Jour 3 — Notre-Dame, Sainte-Chapelle, quartier latin",
+        res_wx: "  |  [Météo : Idéal pour les musées, 20°C]",
+        res_dn: "  |  [Table réservée au Train Bleu]",
+        res_ev: "  |  [Billets confirmés pour l'Expo Louvre]"
+      },
+      party: {
+        mem: "Je préfère la vie nocturne et les lieux branchés",
+        hotel: "Hôtel Costes, 1er Arrondissement  /  Tendance  /  3 nuits",
+        d1: "Jour 1 — Coucher de soleil au Sacré-Coeur, dîner & verre à Pigalle",
+        d2: "Jour 2 — Shopping dans Le Marais, clubbing vers les Champs-Élysées",
+        d3: "Jour 3 — Tour Eiffel, rooftop bar, dîner tardif dans un bistrot",
+        res_wx: "  |  [Météo : Ciel dégagé pour les rooftops, 16°C]",
+        res_dn: "  |  [Table réservée au Matignon Paris]",
+        res_ev: "  |  [Guestlist confirmée au Palais de Tokyo]"
+      },
+      mix: {
+        mem: "Je veux un mix de culture et de fête",
+        hotel: "Hotel Saint-Louis, Ile Saint-Louis  /  Boutique  /  3 nuits",
+        d1: "Jour 1 — Tour Eiffel, croisière sur la Seine, dîner à Saint-Germain",
+        d2: "Jour 2 — Musée du Louvre, Jardin des Tuileries, quartier du Marais",
+        d3: "Jour 3 — Montmartre, Sacré-Coeur, déjeuner d'adieu dans Le Marais",
+        res_wx: "  |  [Météo : Ensoleillé et agréable, 19°C]",
+        res_dn: "  |  [Table réservée au Pink Mamma]",
+        res_ev: "  |  [Billets confirmés pour la croisière]"
+      }
+    };
+    let userPref = 'culture';
+    let tools = { wx: true, dn: true, ev: false };
+
+    function applyPref() {
+      const d = PREFS[userPref];
+
+      $('s4-t1-txt').textContent = tools.wx ? "Weather API" : "Weather API (Désactivé)";
+      $('s4-t1-sub').textContent = tools.wx ? "Prévisions disponibles" : "Aucun accès météo";
+
+      $('s4-t2-txt').textContent = tools.dn ? "Dining API" : "Dining API (Désactivé)";
+      $('s4-t2-sub').textContent = tools.dn ? "Réservation de tables" : "Accès réservations impossible";
+
+      $('s4-t3-txt').textContent = tools.ev ? "Events API" : "Events API (Désactivé)";
+      $('s4-t3-sub').textContent = tools.ev ? "Activités locales disponibles" : "Aucun accès aux événements";
+
+      let activeTools = [];
+      if (tools.wx) activeTools.push(1);
+      if (tools.dn) activeTools.push(2);
+      if (tools.ev) activeTools.push(3);
+
+      [1, 2, 3].forEach(i => {
+        let t = $('s4-t' + i);
+        let isActive = activeTools.includes(i);
+        if (t) {
+          let rects = t.querySelectorAll('rect');
+          if (rects.length > 1) {
+            rects[0].setAttribute("stroke", isActive ? "#fde68a" : "#e2e8f0");
+            rects[0].setAttribute("stroke-width", isActive ? "2" : "1");
+            rects[1].setAttribute("fill", isActive ? "#d97706" : "#94a3b8");
+          }
+        }
+        let txt = $('s4-t' + i + '-txt');
+        if (txt) txt.setAttribute("fill", isActive ? "#0f172a" : "#cbd5e1");
+
+        let ps = $('s4-ps' + i);
+        let mr = $('s4-mr' + i);
+        if (ps) ps.style.display = isActive ? 'block' : 'none';
+        if (mr) mr.style.display = isActive ? 'block' : 'none';
+      });
+
+      const respObj = $('s4-resp');
+      const respTxt = respObj ? respObj.querySelector('text:nth-of-type(2)') : null;
+      if (respTxt) {
+        if (activeTools.length === 3) respTxt.textContent = "Données enrichies complètes";
+        else if (activeTools.length === 2) respTxt.textContent = "Données combinées";
+        else if (activeTools.length === 1) {
+          if (tools.wx) respTxt.textContent = "Données météo réelles";
+          if (tools.dn) respTxt.textContent = "Réservations réelles";
+          if (tools.ev) respTxt.textContent = "Événements réels";
+        } else {
+          respTxt.textContent = "Échec de la tâche";
+        }
+      }
+
+      const memT = document.querySelector('#s5-mem text:nth-of-type(2)');
+      if (memT) memT.textContent = `"${d.mem}"`;
+
+      const htT = document.querySelector('#s9-ht text:nth-of-type(2)');
+      if (htT) htT.textContent = d.hotel;
+
+      const itTList = document.querySelectorAll('#s9-it text');
+      if (itTList.length >= 4) {
+        let extraD1 = tools.wx ? d.res_wx : "  |  [Météo : Inconnue]";
+        let extraD2 = tools.dn ? d.res_dn : "  |  [Attention : Réservez vous-même]";
+        let extraD3 = tools.ev ? d.res_ev : "  |  [Tickets manquants]";
+
+        itTList[1].textContent = d.d1 + extraD1;
+        itTList[2].textContent = d.d2 + extraD2;
+        itTList[3].textContent = d.d3 + extraD3;
+      }
+    }
+
+    document.querySelectorAll('.pref-btn').forEach(b => {
+      b.addEventListener('click', (e) => {
+        document.querySelectorAll('.pref-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+        userPref = e.target.dataset.pref;
+      });
+    });
+
+    $('btn-start').addEventListener('click', () => {
+      tools = {
+        wx: $('chk-wx').checked,
+        dn: $('chk-dn').checked,
+        ev: $('chk-ev').checked
+      };
+      applyPref();
+      startScene(1);
+      playing = true;
+      $('bplay').textContent = 'Pause';
+      requestAnimationFrame(tick);
+      schedNext();
+    });
+
+    const SCENES = [
+      {
+        id: 's1', dur: 600000, enter: async () => { // wait indefinitely for user click
+          fi('s1-ey', 600); fi('s1-t', 700); fi('s1-hr', 400); fi('s1-sub', 600);
+          await wait(800);
+          await fi('s1-int', 400);
+        }
+      },
+      {
+        id: 's2', dur: 9000, enter: async () => {
+          fi('s2-u'); await fi('s2-ql'); await wait(80);
+          await da('s2-a1'); await wait(60);
+          fi('s2-l'); await wait(80);
+          await da('s2-a2'); await wait(60);
+          fi('s2-r'); await fi('s2-ol'); await wait(250);
+          await fi('s2-lim'); await fi('s2-cm');
+        }
+      },
+      {
+        id: 's3', dur: 10000, enter: async () => {
+          fi('s3-u'); await fi('s3-ql'); await wait(80);
+          await da('s3-a1'); await wait(60);
+          fi('s3-l1'); await wait(80);
+          await da('s3-a2'); await wait(60);
+          fi('s3-t'); fi('s3-tql'); await fi('s3-an', 300); await wait(80);
+          await da('s3-a3'); await wait(60);
+          fi('s3-l2'); await wait(80);
+          await da('s3-a4'); await wait(60);
+          fi('s3-r'); await fi('s3-rql', 300); await wait(150);
+          await fi('s3-cm');
+        }
+      },
+      {
+        id: 's4', dur: 10000, enter: async () => {
+          await fi('s4-l'); await wait(200);
+          da('s4-p1'); da('s4-p2'); da('s4-p3'); await wait(520);
+          fi('s4-t1'); fi('s4-t2'); await fi('s4-t3'); await wait(600);
+          const p1 = $('s4-ps1'), p2 = $('s4-ps2'), p3 = $('s4-ps3');
+          [p1, p2, p3].forEach(p => { if (p && p.style.display !== 'none') { p.style.transition = 'opacity 280ms,stroke-dashoffset 460ms ease'; p.style.opacity = '1'; p.style.strokeDashoffset = '0' } });
+          await wait(560);
+          const m1 = $('s4-mr1'), m2 = $('s4-mr2'), m3 = $('s4-mr3');
+          [m1, m2, m3].forEach(m => { if (m && m.style.display !== 'none') { m.style.transition = 'opacity 280ms,stroke-dashoffset 460ms ease'; m.style.opacity = '1'; m.style.strokeDashoffset = '0' } });
+          await wait(550);
+          await fi('s4-resp'); await wait(500);
+          await fi('s4-cm');
+        }
+      },
+      {
+        id: 's5', dur: 10000, enter: async () => {
+          fi('s5-pipe'); await fi('s5-mem'); await wait(80);
+          da('s5-a1'); await da('s5-mc'); await wait(60);
+          await fi('s5-l1'); await wait(80);
+          await da('s5-a2'); await wait(60);
+          await fi('s5-t'); await wait(80);
+          await da('s5-a3'); await wait(60);
+          await fi('s5-r'); await wait(700);
+          await fi('s5-cm');
+        }
+      },
+      {
+        id: 's6', dur: 18000, enter: async () => {
+          fi('s6-obs'); fi('s6-rsn'); await fi('s6-act'); await wait(500);
+
+          const hl = async (id) => {
+            const e = $(id); if (!e) return;
+            const r = e.querySelector('rect');
+            if (r) {
+              const os = r.getAttribute('stroke');
+              const ow = r.getAttribute('stroke-width');
+              r.style.transition = 'stroke .3s, stroke-width .3s';
+              r.setAttribute('stroke', '#3b82f6');
+              r.setAttribute('stroke-width', '3');
+              setTimeout(() => { r.setAttribute('stroke', os); r.setAttribute('stroke-width', ow); }, 400);
+            }
+          };
+          const resetArr = () => {
+            ['s6-ar1', 's6-ar2', 's6-ar3'].forEach(id => {
+              const e = $(id); if (e) { e.style.transition = 'none'; e.style.strokeDashoffset = e.getAttribute('stroke-dasharray'); void e.offsetWidth; }
+            });
+          };
+
+          const runIter = async (itId, t1, t2) => {
+            await fi(itId, 300); await wait(400);
+            hl('s6-obs'); await wait(300);
+            await da('s6-ar1', 300); await wait(200);
+
+            const rt1 = $('s6-rsn-t1');
+            const rt2 = $('s6-rsn-t2');
+            if (rt1) { rt1.style.opacity = '0'; }
+            if (rt2) { rt2.style.opacity = '0'; }
+            await wait(200);
+            if (rt1) { rt1.textContent = t1; rt1.style.opacity = '1'; }
+            if (rt2) { rt2.textContent = t2; rt2.style.opacity = '1'; }
+
+            hl('s6-rsn'); await wait(600);
+            await da('s6-ar2', 300); await wait(200);
+            hl('s6-act'); await wait(300);
+            await da('s6-ar3', 400); await wait(400);
+            resetArr(); await wait(200);
+          };
+
+          await runIter('s6-it1', '▶ J\'ai besoin de vols', '▶ J\'appelle l\'API Flights');
+          await runIter('s6-it2', '▶ Je compare les dates', '▶ Vérifie disponibilités');
+          await runIter('s6-it3', '▶ Tout concorde', '▶ Itinéraire validé');
+          await fi('s6-cm');
+        }
+      },
+      {
+        id: 's7', dur: 10000, enter: async () => {
+          await fi('s7-frame', 600); await wait(200);
+          fi('s7-orch'); fi('s7-reg'); await fi('s7-mem', 600); await wait(300);
+          await fi('s7-cm');
+        }
+      },
+      {
+        id: 's8', dur: 18000, enter: async () => {
+          const hl = async (id, thtId, txt, color) => {
+            const e = $(id); if (!e) return;
+            const r = e.querySelector('rect');
+            const t = $(thtId);
+            if (t) { t.textContent = txt; t.style.opacity = '1'; }
+            if (r) {
+              const os = r.getAttribute('stroke');
+              const ow = r.getAttribute('stroke-width');
+              r.style.transition = 'stroke .3s, stroke-width .3s';
+              r.setAttribute('stroke', color);
+              r.setAttribute('stroke-width', '3');
+              setTimeout(() => { r.setAttribute('stroke', os); r.setAttribute('stroke-width', ow); }, 500);
+            }
+            await wait(600);
+          };
+          const clearThts = (...ids) => {
+            ids.forEach(i => { const e = $(i); if (e) e.style.opacity = '0'; });
+          };
+
+          fi('s8-p'); await fi('s8-e'); await wait(400);
+
+          // Step 1: Planner assigns task
+          await hl('s8-p', 's8-p-tht', '▶ Tâche assignée: Vol', '#3b82f6');
+          await wait(300);
+          await fi('s8-a1', 300); await wait(200);
+
+          // Step 2: Executor acts
+          await hl('s8-e', 's8-e-tht', '▶ Interrogation des APIs...', '#d97706');
+          await wait(400);
+
+          if (!tools.wx || !tools.dn || !tools.ev) {
+            let missingList = [];
+            if (!tools.wx) missingList.push("Weather");
+            if (!tools.dn) missingList.push("Dining");
+            if (!tools.ev) missingList.push("Events");
+            const errRect = $('s8-e-fail-txt');
+            if (errRect) errRect.textContent = "Accès Refusé : " + missingList.join(', ');
+
+            await fi('s8-e-fail'); await wait(400);
+            await fi('s8-a-err', 300); await wait(400);
+            clearThts('s8-p-tht', 's8-e-tht'); await wait(200);
+
+            await fi('s8-p-fb'); await wait(200);
+            await hl('s8-p', 's8-p-tht', '▶ Échec API. Activation du plan B.', '#3b82f6');
+            await wait(800);
+          } else {
+            await fi('s8-a2', 300); await fi('s8-r', 300); await wait(300);
+            await hl('s8-r', 's8-r-tht', '▶ Qualité validée, assemblage.', '#059669');
+            await wait(500);
+          }
+
+          await fi('s8-cm');
+        }
+      },
+      {
+        id: 's9', dur: 8000, enter: async () => {
+          await fi('s9-card', 600); await wait(300);
+          await fi('s9-fl'); await wait(600);
+          await fi('s9-ht'); await wait(600);
+          await fi('s9-it'); await wait(700);
+          await fi('s9-cm');
+        }
+      },
+      {
+        id: 's10', dur: 6000, enter: async () => {
+          await fi('c0'); await wait(400);
+          await fi('c1'); await wait(400);
+          await fi('c2'); await wait(600);
+          await fi('c3');
+        }
+      }
+    ];
+    const TOTAL = SCENES.reduce((s, sc) => s + sc.dur, 0);
+    let cur = 0, playing = true, timer = null, elapsed = 0, lastTick = null;
+    const ran = new Array(SCENES.length).fill(false);
+
+    function showScene(i, prev) {
+      SCENES.forEach((sc, j) => {
+        const e = $(sc.id);
+        if (e) {
+          if (prev === 2 && i === 3 && j === 2) {
+            e.classList.remove('active');
+            e.classList.add('zoom-out');
+            setTimeout(() => e.classList.remove('zoom-out'), 600);
+          } else if (prev === 2 && i === 3 && j === 3) {
+            e.classList.add('zoom-in-start');
+            e.classList.add('active');
+            void e.offsetWidth; // trigger reflow
+            requestAnimationFrame(() => e.classList.remove('zoom-in-start'));
+          } else {
+            if (j === 2) e.classList.remove('zoom-out');
+            if (j === 3) e.classList.remove('zoom-in-start');
+            e.classList.toggle('active', j === i);
+          }
+        }
+      });
+      document.querySelectorAll('.nav-item').forEach((el, j) => {
+        el.classList.toggle('active', j === i);
+      });
+    }
+    function startScene(i) {
+      let prev = cur;
+      cur = i;
+      showScene(i, prev);
+      if (!ran[i]) { ran[i] = true; SCENES[i].enter(); }
+    }
+    $('bnext').addEventListener('click', () => { if (cur < SCENES.length - 1) { startScene(cur + 1); } });
+    $('bprev').addEventListener('click', () => { if (cur > 0) { startScene(cur - 1); } });
+    document.addEventListener('keydown', e => {
+      if (e.code === 'ArrowRight') { e.preventDefault(); $('bnext').click(); }
+      else if (e.code === 'ArrowLeft') { e.preventDefault(); $('bprev').click(); }
+    });
+    document.querySelectorAll('.nav-item').forEach(el => {
+      el.addEventListener('click', (e) => {
+        let target = parseInt(e.target.getAttribute('data-id'));
+        if (target !== cur) startScene(target);
+      });
+    });
+    startScene(0);
+  </script>
+</body>
+
+</html>
