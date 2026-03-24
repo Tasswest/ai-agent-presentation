@@ -663,6 +663,13 @@
             <text x="96" y="200" font-family="Inter" font-size="9.5" fill="#2563eb">Analyse la tâche,</text>
             <text x="96" y="215" font-family="Inter" font-size="9.5" fill="#2563eb">sélectionne l'outil</text>
           </g>
+          <g id="s4-ql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="80" y="236" width="164" height="48" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+            <text x="96" y="257" font-family="Inter" font-size="8.5" fill="#475569">
+              <tspan font-weight="700">Input:</tspan> "Organise un
+            </text>
+            <text x="96" y="272" font-family="Inter" font-size="8.5" fill="#475569">séjour de 3j à Paris"</text>
+          </g>
           <!-- branch paths (gray) -->
           <path id="s4-p1" d="M248,188 C290,188 290,100 340,100" stroke="#e2e8f0" stroke-width="1.5" fill="none"
             stroke-dasharray="230" stroke-dashoffset="230" style="transition:stroke-dashoffset .5s" />
@@ -720,6 +727,11 @@
             <text x="564" y="186" font-family="Inter" font-size="11.5" font-weight="600" fill="#0f172a">Réponse</text>
             <text x="564" y="203" font-family="Inter" font-size="9.5" fill="#059669">Données hôtel réelles</text>
           </g>
+          <g id="s4-rql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="548" y="228" width="148" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" />
+            <text x="564" y="249" font-family="Inter" font-size="8.5" fill="#059669">Toutes données collectées.</text>
+            <text x="564" y="264" font-family="Inter" font-size="8.5" fill="#475569">Prêtes à être profilées.</text>
+          </g>
         </svg>
         <div class="scap">
           <div class="scap-main" id="s4-cm" style="opacity:0;transition:opacity .4s">Choisit le bon outil pour la bonne
@@ -749,6 +761,13 @@
             <text x="44" y="201" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Utilisateur</text>
             <text x="44" y="216" font-family="Inter" font-size="9" fill="#64748b">Requête</text>
           </g>
+          <g id="s5-ql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="30" y="238" width="108" height="48" rx="6" fill="#f8fafc" stroke="#e2e8f0" />
+            <text x="44" y="259" font-family="Inter" font-size="8.5" fill="#475569">
+              <tspan font-weight="700">Input:</tspan> "Hôtel à
+            </text>
+            <text x="44" y="274" font-family="Inter" font-size="8.5" fill="#475569">Paris pour 3j"</text>
+          </g>
           <line id="s5-a1" x1="140" y1="202" x2="178" y2="202" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="45"
             stroke-dashoffset="45" marker-end="url(#mh5)" style="transition:stroke-dashoffset .4s" />
           <g id="s5-l1" style="opacity:0;transition:opacity .4s">
@@ -774,6 +793,11 @@
             <rect x="540" y="176" width="3" height="52" rx="1.5" fill="#059669" />
             <text x="554" y="201" font-family="Inter" font-size="11" font-weight="600" fill="#0f172a">Réponse</text>
             <text x="554" y="216" font-family="Inter" font-size="9.5" fill="#059669">Personnalisé</text>
+          </g>
+          <g id="s5-rql" style="opacity:0;transition:opacity .38s ease">
+            <rect x="540" y="238" width="120" height="48" rx="6" fill="#f0fdf4" stroke="#bbf7d0" />
+            <text x="554" y="259" font-family="Inter" font-size="8.5" fill="#059669">Boutique-hôtel</text>
+            <text x="554" y="274" font-family="Inter" font-size="8.5" fill="#475569">Le Marais, style unique.</text>
           </g>
           <!-- Memory block (appears from above) -->
           <g id="s5-mem" style="opacity:0;transition:opacity .5s">
@@ -1280,7 +1304,7 @@
       },
       {
         id: 's4', dur: 10000, enter: async () => {
-          await fi('s4-l'); await wait(200);
+          await fi('s4-l'); fi('s4-ql'); await wait(200);
           da('s4-p1'); da('s4-p2'); da('s4-p3'); await wait(520);
           fi('s4-t1'); fi('s4-t2'); await fi('s4-t3'); await wait(600);
           const p1 = $('s4-ps1'), p2 = $('s4-ps2'), p3 = $('s4-ps3');
@@ -1289,19 +1313,19 @@
           const m1 = $('s4-mr1'), m2 = $('s4-mr2'), m3 = $('s4-mr3');
           [m1, m2, m3].forEach(m => { if (m && m.style.display !== 'none') { m.style.transition = 'opacity 280ms,stroke-dashoffset 460ms ease'; m.style.opacity = '1'; m.style.strokeDashoffset = '0' } });
           await wait(550);
-          await fi('s4-resp'); await wait(500);
+          await fi('s4-resp'); fi('s4-rql'); await wait(500);
           await fi('s4-cm');
         }
       },
       {
         id: 's5', dur: 10000, enter: async () => {
-          fi('s5-pipe'); await fi('s5-mem'); await wait(80);
+          fi('s5-pipe'); fi('s5-ql'); await fi('s5-mem'); await wait(80);
           da('s5-a1'); await da('s5-mc'); await wait(60);
           await fi('s5-l1'); await wait(80);
           await da('s5-a2'); await wait(60);
           await fi('s5-t'); await wait(80);
           await da('s5-a3'); await wait(60);
-          await fi('s5-r'); await wait(700);
+          fi('s5-r'); fi('s5-rql'); await wait(700);
           await fi('s5-cm');
         }
       },
